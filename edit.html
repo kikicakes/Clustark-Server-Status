@@ -2,74 +2,234 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Edit Character & Tribe Mappings</title>
+  <title>Edit ClustARK Player Mappings</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      max-width: 900px;
+    }
+    textarea {
+      width: 100%;
+      height: 250px;
+      background: #222;
+      color: white;
+      border: 1px solid #444;
+      padding: 10px;
+      font-family: monospace;
+      resize: vertical;
+    }
+  </style>
 </head>
-<body class="bg-dark text-white p-4">
+<body>
   <div class="container">
-    <h2>📝 Character & Tribe Mapper</h2>
-    <p>This creates a downloadable mapping JSON you can upload to your GitHub repo.</p>
-    <form id="mapForm" class="mb-4">
-      <div class="mb-3">
-        <label class="form-label">Steam/Epic Name</label>
-        <input type="text" class="form-control" id="steamName" required />
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Character Name</label>
-        <input type="text" class="form-control" id="characterName" required />
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Tribe Name</label>
-        <input type="text" class="form-control" id="tribeName" />
-      </div>
-      <button type="submit" class="btn btn-primary">Add/Update Mapping</button>
-    </form>
+    <h1 class="mb-4">Edit Player Mappings</h1>
+    
+    <div class="mb-3">
+      <label for="playerSelect" class="form-label">Select Steam/Epic Name (unmapped players only)</label>
+      <select id="playerSelect" class="form-select">
+        <option value="">-- Loading players... --</option>
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="characterName" class="form-label">Character Name</label>
+      <input type="text" id="characterName" class="form-control" placeholder="Enter character name" />
+    </div>
+    <!-- Tribe name input commented out for now -->
+    <!--
+    <div class="mb-3">
+      <label for="tribeName" class="form-label">Tribe Name</label>
+      <input type="text" id="tribeName" class="form-control" placeholder="Enter tribe name" />
+    </div>
+    -->
+    <button id="addMappingBtn" class="btn btn-primary mb-4">Add / Update Mapping</button>
 
-    <h4>Current Mappings</h4>
-    <ul id="mappingList" class="list-group mb-4"></ul>
-    <button id="downloadJson" class="btn btn-success">Download mappings.json</button>
+    <h2>Existing Mappings</h2>
+    <div id="mappingsContainer" class="mb-4"></div>
+
+    <button id="saveMappingsBtn" class="btn btn-success">Save Mappings (Simulated)</button>
+    <p class="mt-2 text-muted"><small>Saving will prompt the current mappings JSON to copy manually. Real server-side saving requires backend support.</small></p>
   </div>
 
   <script>
-    let nameMap = {};
+    const API_SERVERS = [
+      { id: 712734, label: "The Island" },
+      { id: 712735, label: "Scorched Earth" },
+      { id: 739093, label: "Aberration" },
+      { id: 713067, label: "Extinction" },
+      { id: 713549, label: "Genesis Part 1" },
+      { id: 1001651, label: "Genesis Part 2" },
+      { id: 712733, label: "Ragnarok" },
+      { id: 833827, label: "The Center" },
+      { id: 712731, label: "Crystal Isles" },
+      { id: 712730, label: "Valguero" },
+      { id: 1493786, label: "Lost Island" },
+      { id: 1966993, label: "Fjordur" }
+    ];
 
-    function refreshList() {
-      $('#mappingList').empty();
-      for (const [key, value] of Object.entries(nameMap)) {
-        const tribe = value.tribe ? ` (${value.tribe})` : '';
-        $('#mappingList').append(`<li class="list-group-item bg-secondary text-white">
-          <strong>${key}</strong> ➡️ ${value.character}${tribe}
-        </li>`);
+    let mappings = {};
+    let allPlayersSet = new Set();
+
+    function fetchAllPlayers() {
+      return new Promise((resolve) => {
+        let playersSet = new Set();
+        let completed = 0;
+
+        API_SERVERS.forEach(server => {
+          const url = `https://corsproxy.io/?https://api.trackyserver.com/widget/index.php?id=${server.id}`;
+          $.getJSON(url)
+            .done(data => {
+              if (Array.isArray(data.playerslist)) {
+                data.playerslist.forEach(p => playersSet.add(p.name));
+              }
+            })
+            .fail(() => {
+              console.warn(`Failed to fetch players for server ${server.label}`);
+            })
+            .always(() => {
+              completed++;
+              if (completed === API_SERVERS.length) {
+                resolve(playersSet);
+              }
+            });
+        });
+      });
+    }
+
+    function populatePlayerDropdown(unmappedPlayers) {
+      const $select = $('#playerSelect');
+      $select.empty();
+
+      if (unmappedPlayers.length === 0) {
+        $select.append('<option value="">No unmapped players found</option>');
+        return;
+      }
+
+      $select.append('<option value="">-- Select a player --</option>');
+      unmappedPlayers.forEach(name => {
+        $select.append(`<option value="${name}">${name}</option>`);
+      });
+    }
+
+    function renderMappings() {
+      const container = $('#mappingsContainer');
+      container.empty();
+
+      if (Object.keys(mappings).length === 0) {
+        container.html('<p>No mappings yet.</p>');
+        return;
+      }
+
+      for (const [steamName, info] of Object.entries(mappings)) {
+        const charName = info.character || '';
+        // const tribeName = info.tribe || ''; // Tribe currently disabled
+        const div = $(`
+          <div class="card bg-secondary text-white mb-2 p-2 d-flex flex-wrap align-items-center justify-content-between">
+            <div><strong>Steam/Epic:</strong> ${steamName}</div>
+            <div>
+              <input type="text" class="form-control form-control-sm me-2 mb-1 mb-md-0 characterInput" data-steam="${steamName}" placeholder="Character Name" value="${charName}" style="width: 180px; display: inline-block;" />
+              <!-- Tribe name input disabled -->
+              <!-- <input type="text" class="form-control form-control-sm tribeInput" data-steam="${steamName}" placeholder="Tribe Name" value="${tribeName}" style="width: 180px; display: inline-block;" /> -->
+              <button class="btn btn-danger btn-sm ms-2 removeMappingBtn" data-steam="${steamName}">Remove</button>
+            </div>
+          </div>
+        `);
+        container.append(div);
       }
     }
 
-    $('#mapForm').on('submit', function (e) {
-      e.preventDefault();
-      const steam = $('#steamName').val().trim();
-      const character = $('#characterName').val().trim();
-      const tribe = $('#tribeName').val().trim();
-      if (!steam || !character) return;
-      nameMap[steam] = { character: character, tribe: tribe || '' };
-      refreshList();
-      this.reset();
-    });
-
-    $('#downloadJson').on('click', () => {
-      const blob = new Blob([JSON.stringify(nameMap, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'mappings.json';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
+    function refreshUnmappedDropdown() {
+      // Remove all mapped steam names from allPlayersSet
+      const unmappedPlayers = Array.from(allPlayersSet).filter(name => !(name in mappings));
+      unmappedPlayers.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+      populatePlayerDropdown(unmappedPlayers);
+    }
 
     $(document).ready(() => {
-      $.getJSON('mappings.json', function(existing) {
-        nameMap = existing || {};
-        refreshList();
+      // Load existing mappings
+      $.getJSON('mappings.json')
+        .done(data => {
+          mappings = data;
+        })
+        .fail(() => {
+          mappings = {};
+          alert('Failed to load mappings.json. Starting with empty mappings.');
+        })
+        .always(() => {
+          renderMappings();
+
+          // Fetch all players from all servers
+          fetchAllPlayers().then(playersSet => {
+            allPlayersSet = playersSet;
+            refreshUnmappedDropdown();
+          });
+        });
+
+      $('#addMappingBtn').click(() => {
+        const steamName = $('#playerSelect').val();
+        const characterName = $('#characterName').val().trim();
+        // const tribeName = $('#tribeName').val().trim();
+
+        if (!steamName) {
+          alert('Please select a Steam/Epic name from the dropdown.');
+          return;
+        }
+        if (!characterName) {
+          alert('Please enter a character name.');
+          return;
+        }
+
+        mappings[steamName] = {
+          character: characterName,
+          // tribe: tribeName || ''  // Disabled for now
+        };
+
+        renderMappings();
+        refreshUnmappedDropdown();
+
+        // Clear inputs
+        $('#playerSelect').val('');
+        $('#characterName').val('');
+        // $('#tribeName').val('');
+      });
+
+      $('#mappingsContainer').on('click', '.removeMappingBtn', function() {
+        const steamName = $(this).data('steam');
+        if (confirm(`Remove mapping for ${steamName}?`)) {
+          delete mappings[steamName];
+          renderMappings();
+          refreshUnmappedDropdown();
+        }
+      });
+
+      $('#mappingsContainer').on('input', '.characterInput', function() {
+        const steamName = $(this).data('steam');
+        const val = $(this).val().trim();
+        if (steamName in mappings) {
+          mappings[steamName].character = val;
+        }
+      });
+
+      // Tribe input handler commented out for now
+      /*
+      $('#mappingsContainer').on('input', '.tribeInput', function() {
+        const steamName = $(this).data('steam');
+        const val = $(this).val().trim();
+        if (steamName in mappings) {
+          mappings[steamName].tribe = val;
+        }
+      });
+      */
+
+      $('#saveMappingsBtn').click(() => {
+        const jsonStr = JSON.stringify(mappings, null, 2);
+        prompt('Copy your mappings JSON below:', jsonStr);
       });
     });
   </script>
