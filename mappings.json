@@ -1,14 +1,6 @@
 {
-  "SteamUser123": {
-    "character": "ShadowRunner",
-    "tribe": "Bloodfang"
-  },
-  "EpicUserX": {
-    "character": "QueenLynx",
-    "tribe": "Skyward Clan"
-  },
-  "AnotherName": {
-    "character": "RogueWarrior",
-    "tribe": ""
-  }
+  "Kiki": {
+    "character": "KikiCakes",
+    "tribe": "UnderSeer"
+}
 }
