@@ -48,18 +48,15 @@
 
           if (Array.isArray(data.playerslist) && data.playerslist.length > 0) {
             data.playerslist.forEach(p => {
+              console.log("Received player:", p.name);
               const normalized = p.name.trim().toLowerCase();
-              let matchedEntry = null;
 
-              for (const [key, value] of Object.entries(mapping)) {
-                if (key.trim().toLowerCase() === normalized) {
-                  matchedEntry = value;
-                  break;
-                }
-              }
+              const matchedEntry = Object.entries(mapping).find(
+                ([key]) => key.trim().toLowerCase() === normalized
+              )?.[1] || {};
 
-              const characterName = matchedEntry?.character || '';
-              // const tribeName = matchedEntry?.tribe || '';
+              const characterName = matchedEntry.character || '';
+              // const tribeName = matchedEntry.tribe || '';
 
               $table.append(`
                 <tr>
