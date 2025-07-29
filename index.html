@@ -11,7 +11,7 @@
 <body>
   <div class="container py-4">
     <h1 class="text-center mb-4">🎮 ClustARK Server Status</h1>
-    <div id="serverStatusContainer" class="d-flex flex-column gap-4"></div>
+    <div id="serverStatusContainer" class="row gy-4"></div>
   </div>
 
   <script>
@@ -27,45 +27,48 @@
       { id: 712735, label: "Scorched Earth" },
       { id: 713067, label: "Extinction" },
       { id: 713549, label: "Genesis 1" },
-      { id: 833827, label: "The Center" },
+      { id: 833827, label: "The Center" }
     ];
 
     function createServerCard(data, mapping) {
       const $card = $(`
-        <div class="card text-bg-dark">
-          <div class="card-body">
-            <h5 class="card-title">${data.name || "Unknown Server"}</h5>
-            <p class="card-text">
-              <strong>Map:</strong> ${data.map || "Unknown"}<br>
-              <strong>Players:</strong> ${data.playerscount ?? "Offline"}
-            </p>
-            <div class="table-responsive">
-              <table class="table table-dark table-bordered table-sm">
-                <thead>
-                  <tr>
-                    <th>Steam/Epic Name</th>
-                    <th>Character Name</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${Array.isArray(data.playerslist) && data.playerslist.length > 0
-                    ? data.playerslist.map(p => {
-                        const normalized = p.name.trim().toLowerCase();
-                        const match = Object.entries(mapping).find(
-                          ([key]) => key.trim().toLowerCase() === normalized
-                        )?.[1] || {};
-                        const characterName = match.character || '';
-                        return `
-                          <tr>
-                            <td>${p.name}</td>
-                            <td>${characterName}</td>
-                          </tr>
-                        `;
-                      }).join('')
-                    : '<tr><td colspan="2">No players connected</td></tr>'
-                  }
-                </tbody>
-              </table>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card text-bg-dark h-100">
+            <div class="card-body">
+              <h5 class="card-title">${data.name || "Unknown Server"}</h5>
+              <p class="card-text">
+                <strong>Map:</strong> ${data.map || "Unknown"}<br>
+                <strong>Players:</strong> ${data.playerscount ?? "Offline"}
+              </p>
+              <div class="table-responsive">
+                <table class="table table-dark table-bordered table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th>Steam/Epic Name</th>
+                      <th>Character Name</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${
+                      Array.isArray(data.playerslist) && data.playerslist.length > 0
+                        ? data.playerslist.map(p => {
+                            const normalized = p.name.trim().toLowerCase();
+                            const match = Object.entries(mapping).find(
+                              ([key]) => key.trim().toLowerCase() === normalized
+                            )?.[1] || {};
+                            const characterName = match.character || '';
+                            return `
+                              <tr>
+                                <td>${p.name}</td>
+                                <td>${characterName}</td>
+                              </tr>
+                            `;
+                          }).join('')
+                        : '<tr><td colspan="2">No players connected</td></tr>'
+                    }
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -81,10 +84,12 @@
           .done(data => createServerCard(data, mapping))
           .fail(() => {
             $('#serverStatusContainer').append(`
-              <div class="card text-bg-danger">
-                <div class="card-body">
-                  <h5 class="card-title">${server.label}</h5>
-                  <p class="card-text">Failed to load server data.</p>
+              <div class="col-12 col-md-6 col-lg-4">
+                <div class="card text-bg-danger h-100">
+                  <div class="card-body">
+                    <h5 class="card-title">${server.label}</h5>
+                    <p class="card-text">Failed to load server data.</p>
+                  </div>
                 </div>
               </div>
             `);
