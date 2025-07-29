@@ -1,30 +1,84 @@
+/* General body background and font */
 body {
-  background-color: #20232a;
-  color: #ffffff;
-  padding: 20px;
+  background-color: #121212;
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
+/* Container spacing */
+.container {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+/* Card styling with border */
 .card {
-  background-color: #2d2f36;
-  border: none;
+  border: 1px solid #444;
 }
 
+/* Server title styling with colored background and padding */
+.server-title {
+  background: linear-gradient(90deg, #4b79a1, #283e51);
+  padding: 8px 12px;
+  border-radius: 4px 4px 0 0;
+  color: white;
+  font-weight: 600;
+  margin: -1rem -1rem 1rem -1rem;
+  user-select: none;
+  /* Different background colors for variety using nth-child */
+}
+
+.card:nth-child(3n+1) .server-title {
+  background: #6c757d; /* Gray */
+}
+
+.card:nth-child(3n+2) .server-title {
+  background: #495057; /* Darker Gray */
+}
+
+.card:nth-child(3n) .server-title {
+  background: #343a40; /* Even darker */
+}
+
+/* Table styling inside cards */
 .table {
-  color: #ffffff;
-  background-color: #3a3d45;
+  margin-bottom: 0;
+  color: white;
 }
 
-.table th,
-.table td {
-  color: #ffffff;
+/* Vertically center table cell content */
+.table tbody tr td {
+  vertical-align: middle;
 }
 
-body,
-.card,
-.table,
-p,
-h2,
-h5,
-span {
-  color: #ffffff !important;
+/* Responsive table scroll on small devices */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Loading and error message styling */
+td[colspan="2"] {
+  text-align: center;
+  font-style: italic;
+}
+
+/* Scrollbar styling for better visibility */
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #222;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 3px;
+}
+
+/* Optional: Hover highlight on rows */
+.table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
