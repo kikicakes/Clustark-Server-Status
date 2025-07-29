@@ -23,7 +23,6 @@
             <tr>
               <th>Steam/Epic Name</th>
               <th>Character Name</th>
-              <!-- <th>Tribe Name</th> -->
             </tr>
           </thead>
           <tbody id="playerTable">
@@ -56,13 +55,11 @@
               )?.[1] || {};
 
               const characterName = matchedEntry.character || '';
-              // const tribeName = matchedEntry.tribe || '';
-
+              
               $table.append(`
                 <tr>
                   <td>${p.name}</td>
                   <td>${characterName}</td>
-                  <!-- <td>${tribeName}</td> -->
                 </tr>
               `);
             });
