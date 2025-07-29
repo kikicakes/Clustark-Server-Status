@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Character & Tribe Mappings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body class="bg-dark text-white p-4">
+  <div class="container">
+    <h2>📝 Character & Tribe Mapper</h2>
+    <p>This creates a downloadable mapping JSON you can upload to your GitHub repo.</p>
+    <form id="mapForm" class="mb-4">
+      <div class="mb-3">
+        <label class="form-label">Steam/Epic Name</label>
+        <input type="text" class="form-control" id="steamName" required />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Character Name</label>
+        <input type="text" class="form-control" id="characterName" required />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Tribe Name</label>
+        <input type="text" class="form-control" id="tribeName" />
+      </div>
+      <button type="submit" class="btn btn-primary">Add/Update Mapping</button>
+    </form>
+
+    <h4>Current Mappings</h4>
+    <ul id="mappingList" class="list-group mb-4"></ul>
+    <button id="downloadJson" class="btn btn-success">Download mappings.json</button>
+  </div>
+
+  <script>
+    let nameMap = {};
+
+    function refreshList() {
+      $('#mappingList').empty();
+      for (const [key, value] of Object.entries(nameMap)) {
+        const tribe = value.tribe ? ` (${value.tribe})` : '';
+        $('#mappingList').append(`<li class="list-group-item bg-secondary text-white">
+          <strong>${key}</strong> ➡️ ${value.character}${tribe}
+        </li>`);
+      }
+    }
+
+    $('#mapForm').on('submit', function (e) {
+      e.preventDefault();
+      const steam = $('#steamName').val().trim();
+      const character = $('#characterName').val().trim();
+      const tribe = $('#tribeName').val().trim();
+      if (!steam || !character) return;
+      nameMap[steam] = { character: character, tribe: tribe || '' };
+      refreshList();
+      this.reset();
+    });
+
+    $('#downloadJson').on('click', () => {
+      const blob = new Blob([JSON.stringify(nameMap, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'mappings.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    $(document).ready(() => {
+      $.getJSON('mappings.json', function(existing) {
+        nameMap = existing || {};
+        refreshList();
+      });
+    });
+  </script>
+</body>
+</html>
