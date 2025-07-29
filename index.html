@@ -35,7 +35,7 @@
         <div class="col-12 col-md-6 col-lg-4">
           <div class="card text-bg-dark h-100">
             <div class="card-body">
-              <h5 class="card-title">${data.name || "Unknown Server"}</h5>
+                <h5 class="card-title server-title">${data.name || "Unknown Server"}</h5>
               <p class="card-text">
                 <strong>Map:</strong> ${data.map || "Unknown"}<br>
                 <strong>Players:</strong> ${data.playerscount ?? "Offline"}
@@ -98,12 +98,18 @@
     }
 
     $(document).ready(() => {
-      $.getJSON('mappings.json', function(mapping) {
-        loadServers(mapping);
-        setInterval(() => loadServers(mapping), 30000);
-      }).fail(() => {
-        alert('Failed to load mappings.json');
-      });
+        $.getJSON('mappings.json')
+  .done(function(mapping) {
+    loadServers(mapping);
+    setInterval(() => loadServers(mapping), 30000);
+  })
+  .fail(() => {
+    console.warn('Failed to load mappings.json. Proceeding with empty mapping.');
+    const emptyMapping = {};
+    loadServers(emptyMapping);
+    setInterval(() => loadServers(emptyMapping), 30000);
+  });
+
     });
   </script>
 </body>
