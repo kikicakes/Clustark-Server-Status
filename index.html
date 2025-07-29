@@ -25,17 +25,21 @@
   <script>
     const API_URL = 'https://corsproxy.io/?https://api.trackyserver.com/widget/index.php?id=1001651';
 
-    function refreshServerData() {
+    function refreshServerData(mapping) {
       $.getJSON(API_URL)
         .done(data => {
           $('#serverName').text(data.name || 'Unknown');
           $('#mapName').text(data.map || 'Unknown');
-          const count = data.playerscount ?? 'Offline';
-          $('#playerCount').text(count);
+          $('#playerCount').text(data.playerscount ?? 'Offline');
           const $pl = $('#playerList').empty();
+
           if (Array.isArray(data.playerslist) && data.playerslist.length > 0) {
             data.playerslist.forEach(p => {
-              $pl.append(`<li class="list-group-item">${p.name}</li>`);
+              const mapEntry = mapping[p.name];
+              const charName = mapEntry?.character || p.name;
+              const tribeName = mapEntry?.tribe ? ` (${mapEntry.tribe})` : '';
+              const displayName = `${charName}${tribeName}`;
+              $pl.append(`<li class="list-group-item">${displayName}</li>`);
             });
           } else {
             $pl.append('<li class="list-group-item">No players connected</li>');
@@ -48,8 +52,12 @@
     }
 
     $(document).ready(() => {
-      refreshServerData();
-      setInterval(refreshServerData, 30000);
+      $.getJSON('mappings.json', function(mapping) {
+        refreshServerData(mapping);
+        setInterval(() => refreshServerData(mapping), 30000);
+      }).fail(() => {
+        alert('Failed to load mappings.json');
+      });
     });
   </script>
 </body>
