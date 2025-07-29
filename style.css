@@ -1,0 +1,25 @@
+body {
+  background-color: #20232a;
+  color: #ffffff;
+  padding: 20px;
+}
+
+.card {
+  background-color: #2d2f36;
+  border: none;
+}
+
+.list-group-item {
+  background-color: #3a3d45;
+  color: #ffffff !important;
+}
+
+body,
+.card,
+.list-group-item,
+p,
+h2,
+h5,
+span {
+  color: #ffffff !important;
+}
