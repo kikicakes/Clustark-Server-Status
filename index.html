@@ -23,11 +23,11 @@
             <tr>
               <th>Steam/Epic Name</th>
               <th>Character Name</th>
-              <th>Tribe Name</th>
+              <!-- <th>Tribe Name</th> -->
             </tr>
           </thead>
           <tbody id="playerTable">
-            <tr><td colspan="3">Loading…</td></tr>
+            <tr><td colspan="2">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -51,7 +51,6 @@
               const normalized = p.name.trim().toLowerCase();
               let matchedEntry = null;
 
-              // Try to match with normalized keys from mappings.json
               for (const [key, value] of Object.entries(mapping)) {
                 if (key.trim().toLowerCase() === normalized) {
                   matchedEntry = value;
@@ -60,23 +59,23 @@
               }
 
               const characterName = matchedEntry?.character || '';
-              const tribeName = matchedEntry?.tribe || '';
+              // const tribeName = matchedEntry?.tribe || '';
 
               $table.append(`
                 <tr>
                   <td>${p.name}</td>
                   <td>${characterName}</td>
-                  <td>${tribeName}</td>
+                  <!-- <td>${tribeName}</td> -->
                 </tr>
               `);
             });
           } else {
-            $table.append('<tr><td colspan="3">No players connected</td></tr>');
+            $table.append('<tr><td colspan="2">No players connected</td></tr>');
           }
         })
         .fail(() => {
           $('#serverName, #mapName, #playerCount').text('Error');
-          $('#playerTable').html('<tr><td colspan="3" class="bg-danger text-white">Failed to load player list</td></tr>');
+          $('#playerTable').html('<tr><td colspan="2" class="bg-danger text-white">Failed to load player list</td></tr>');
         });
     }
 
