@@ -43,13 +43,25 @@
           $('#serverName').text(data.name || 'Unknown');
           $('#mapName').text(data.map || 'Unknown');
           $('#playerCount').text(data.playerscount ?? 'Offline');
+
           const $table = $('#playerTable').empty();
 
           if (Array.isArray(data.playerslist) && data.playerslist.length > 0) {
             data.playerslist.forEach(p => {
-              const entry = mapping[p.name] || {};
-              const characterName = entry.character || '';
-              const tribeName = entry.tribe || '';
+              const normalized = p.name.trim().toLowerCase();
+              let matchedEntry = null;
+
+              // Try to match with normalized keys from mappings.json
+              for (const [key, value] of Object.entries(mapping)) {
+                if (key.trim().toLowerCase() === normalized) {
+                  matchedEntry = value;
+                  break;
+                }
+              }
+
+              const characterName = matchedEntry?.character || '';
+              const tribeName = matchedEntry?.tribe || '';
+
               $table.append(`
                 <tr>
                   <td>${p.name}</td>
