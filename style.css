@@ -9,14 +9,19 @@ body {
   border: none;
 }
 
-.list-group-item {
+.table {
+  color: #ffffff;
   background-color: #3a3d45;
-  color: #ffffff !important;
+}
+
+.table th,
+.table td {
+  color: #ffffff;
 }
 
 body,
 .card,
-.list-group-item,
+.table,
 p,
 h2,
 h5,
