@@ -2,205 +2,220 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Clustark Server Status - Edit Mappings</title>
+  <title>Clustark Server Status - Edit Player Mappings</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <style>
-    body { background: #222; color: white; padding: 20px; }
-    .card { background: #333; }
-    input.form-control-sm { max-width: 250px; display: inline-block; }
+    body {
+      background-color: #121212;
+      color: white;
+      padding: 20px;
+    }
+    label {
+      margin-top: 10px;
+    }
+    select, input {
+      width: 100%;
+      margin-bottom: 15px;
+      background-color: #222;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 8px;
+    }
+    button {
+      margin-top: 10px;
+    }
+    #status {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Clustark Server Status - Edit Player Mappings</h2>
 
-    <div class="mb-3">
-      <label for="playerSelect" class="form-label">Select Steam/Epic Player:</label>
-      <select id="playerSelect" class="form-select" aria-label="Player select">
-        <option>Loading players...</option>
+    <form id="mappingForm">
+      <label for="steamEpicName">Select Steam/Epic Name:</label>
+      <select id="steamEpicName" required>
+        <option value="" disabled selected>Loading players...</option>
       </select>
-    </div>
 
-    <div class="mb-3">
-      <label for="characterName" class="form-label">Character Name:</label>
-      <input type="text" id="characterName" class="form-control" placeholder="Enter character name" />
-    </div>
+      <label for="characterName">Character Name:</label>
+      <input type="text" id="characterName" placeholder="Enter character name" required />
 
-    <button id="addMappingBtn" class="btn btn-primary mb-4">Add / Update Mapping</button>
+      <button type="submit" class="btn btn-primary">Add Mapping</button>
+    </form>
 
-    <h4>Existing Mappings</h4>
-    <div id="mappingsContainer">Loading mappings...</div>
+    <div id="status"></div>
 
-    <button id="saveMappingsBtn" class="btn btn-success mt-4">Save Mappings (Copy JSON)</button>
+    <hr />
+
+    <h4>Current Mappings</h4>
+    <table class="table table-dark table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Steam/Epic Name</th>
+          <th>Character Name</th>
+        </tr>
+      </thead>
+      <tbody id="mappingTableBody">
+        <tr><td colspan="2">Loading...</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <script>
+    // Servers to query
     const API_SERVERS = [
-      { id: 712734, label: "The Island" },
-      { id: 712735, label: "Scorched Earth" },
-      { id: 739093, label: "Aberration" },
-      { id: 713067, label: "Extinction" },
-      { id: 713549, label: "Genesis Part 1" },
-      { id: 1001651, label: "Genesis Part 2" },
-      { id: 712733, label: "Ragnarok" },
-      { id: 833827, label: "The Center" },
-      { id: 712731, label: "Crystal Isles" },
-      { id: 712730, label: "Valguero" },
-      { id: 1493786, label: "Lost Island" },
-      { id: 1966993, label: "Fjordur" }
+      { id: 712734, label: 'TheIsland' },
+      { id: 712735, label: 'ScorchedEarth' },
+      { id: 739093, label: 'Aberration' },
+      { id: 713067, label: 'Extinction' },
+      { id: 713549, label: 'Genesis Part 1' },
+      { id: 1001651, label: 'Genesis Part 2' },
+      { id: 712733, label: 'Ragnarok' },
+      { id: 833827, label: 'The Centre' },
+      { id: 712731, label: 'CrystalIsles' },
+      { id: 712730, label: 'Valguero' },
+      { id: 1493786, label: 'LostIsland' },
+      { id: 1966993, label: 'Fjordur' }
     ];
 
-    let mappings = {};
-    let allPlayersSet = new Set();
-
-    function fetchAllPlayers() {
-      return new Promise((resolve) => {
-        let playersSet = new Set();
-        let completed = 0;
-
-        API_SERVERS.forEach(server => {
-          const url = `https://corsproxy.io/?https://api.trackyserver.com/widget/index.php?id=${server.id}`;
-          console.log(`Fetching players for server: ${server.label} (${server.id})`);
-          $.getJSON(url)
-            .done(data => {
-              console.log(`Data from ${server.label}:`, data);
-              if (Array.isArray(data.playerslist)) {
-                data.playerslist.forEach(p => playersSet.add(p.name));
-              } else {
-                console.warn(`${server.label} has no playerslist array.`);
-              }
-            })
-            .fail((jqxhr, textStatus, error) => {
-              console.error(`Failed to fetch players for ${server.label}: ${textStatus}, ${error}`);
-            })
-            .always(() => {
-              completed++;
-              if (completed === API_SERVERS.length) {
-                resolve(playersSet);
-              }
-            });
-        });
+    // Load existing mappings from mappings.json
+    function loadMappings() {
+      return $.getJSON('mappings.json').catch(() => {
+        // If mappings.json not found or error, return empty object
+        return {};
       });
     }
 
-    function populatePlayerDropdown(unmappedPlayers) {
-      const $select = $('#playerSelect');
-      $select.empty();
+    // Save mappings by triggering file download (since no server-side)
+    function saveMappings(mappings) {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(mappings, null, 2));
+      const dlAnchorElem = document.createElement('a');
+      dlAnchorElem.setAttribute("href", dataStr);
+      dlAnchorElem.setAttribute("download", "mappings.json");
+      dlAnchorElem.click();
+    }
+
+    // Fetch players from all servers and combine unique names
+    function fetchAllPlayers() {
+      const fetches = API_SERVERS.map(server => {
+        const url = `https://corsproxy.io/?https://api.trackyserver.com/widget/index.php?id=${server.id}`;
+        console.log(`Fetching players for server: ${server.label} (${server.id})`);
+
+        return $.getJSON(url)
+          .then(data => {
+            if (Array.isArray(data.playerslist)) {
+              return data.playerslist.map(p => p.name);
+            } else {
+              console.warn(`${server.label} has no playerslist array.`);
+              return [];
+            }
+          })
+          .catch((err) => {
+            console.error(`Failed to fetch players for ${server.label}:`, err);
+            return [];
+          });
+      });
+
+      return Promise.allSettled(fetches).then(results => {
+        let allPlayers = new Set();
+        results.forEach(result => {
+          if (result.status === 'fulfilled') {
+            result.value.forEach(name => allPlayers.add(name));
+          } else {
+            console.warn('A fetch failed:', result.reason);
+          }
+        });
+        return allPlayers;
+      });
+    }
+
+    // Populate the dropdown with players not already mapped
+    function populateDropdown(allPlayers, mappings) {
+      const $dropdown = $('#steamEpicName');
+      $dropdown.empty();
+
+      // Filter out already mapped players
+      const unmappedPlayers = [...allPlayers].filter(name => !mappings.hasOwnProperty(name));
 
       if (unmappedPlayers.length === 0) {
-        $select.append('<option value="">No unmapped players found</option>');
-        return;
+        $dropdown.append('<option disabled>No unmapped players found</option>');
+      } else {
+        $dropdown.append('<option disabled selected>Select a player</option>');
+        unmappedPlayers.forEach(name => {
+          $dropdown.append(`<option value="${name}">${name}</option>`);
+        });
       }
-
-      $select.append('<option value="">-- Select a player --</option>');
-      unmappedPlayers.forEach(name => {
-        $select.append(`<option value="${name}">${name}</option>`);
-      });
     }
 
-    function renderMappings() {
-      const container = $('#mappingsContainer');
-      container.empty();
+    // Populate the current mappings table
+    function populateMappingTable(mappings) {
+      const $tbody = $('#mappingTableBody');
+      $tbody.empty();
 
-      if (Object.keys(mappings).length === 0) {
-        container.html('<p>No mappings yet.</p>');
+      const keys = Object.keys(mappings);
+      if (keys.length === 0) {
+        $tbody.append('<tr><td colspan="2">No mappings yet.</td></tr>');
         return;
       }
 
-      for (const [steamName, info] of Object.entries(mappings)) {
-        const charName = info.character || '';
-        const div = $(`
-          <div class="card mb-2 p-2 d-flex flex-wrap align-items-center justify-content-between">
-            <div><strong>Steam/Epic:</strong> ${steamName}</div>
-            <div>
-              <input type="text" class="form-control form-control-sm me-2 mb-1 mb-md-0 characterInput" data-steam="${steamName}" placeholder="Character Name" value="${charName}" style="width: 180px; display: inline-block;" />
-              <button class="btn btn-danger btn-sm ms-2 removeMappingBtn" data-steam="${steamName}">Remove</button>
-            </div>
-          </div>
+      keys.forEach(steamName => {
+        const characterName = mappings[steamName].character || '';
+        $tbody.append(`
+          <tr>
+            <td>${steamName}</td>
+            <td>${characterName}</td>
+          </tr>
         `);
-        container.append(div);
-      }
-    }
-
-    function refreshUnmappedDropdown() {
-      const unmappedPlayers = Array.from(allPlayersSet).filter(name => !(name in mappings));
-      unmappedPlayers.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-      populatePlayerDropdown(unmappedPlayers);
+      });
     }
 
     $(document).ready(() => {
-      // Load mappings.json (or start empty)
-      $.getJSON('mappings.json')
-        .done(data => {
-          mappings = data;
-          console.log('Loaded mappings:', mappings);
-        })
-        .fail(() => {
-          mappings = {};
-          alert('Failed to load mappings.json. Starting with empty mappings.');
-        })
-        .always(() => {
-          renderMappings();
+      let currentMappings = {};
 
-          fetchAllPlayers().then(playersSet => {
-            allPlayersSet = playersSet;
-            if(allPlayersSet.size === 0) {
-              alert('No players found on any servers.');
-              $('#playerSelect').empty().append('<option value="">No players found</option>');
-            } else {
-              refreshUnmappedDropdown();
-            }
-          });
+      function refreshDropdownAndTable() {
+        fetchAllPlayers().then(allPlayers => {
+          populateDropdown(allPlayers, currentMappings);
+          populateMappingTable(currentMappings);
+          $('#status').text('');
         });
+      }
 
-      // Add / update mapping
-      $('#addMappingBtn').click(() => {
-        const steamName = $('#playerSelect').val();
+      // Initial load mappings and dropdown
+      loadMappings().then(mappings => {
+        currentMappings = mappings;
+        refreshDropdownAndTable();
+      });
+
+      // Handle form submission
+      $('#mappingForm').submit(e => {
+        e.preventDefault();
+
+        const steamName = $('#steamEpicName').val();
         const characterName = $('#characterName').val().trim();
 
-        if (!steamName) {
-          alert('Please select a Steam/Epic name.');
-          return;
-        }
-        if (!characterName) {
-          alert('Please enter a character name.');
+        if (!steamName || !characterName) {
+          $('#status').text('Please select a player and enter a character name.');
           return;
         }
 
-        mappings[steamName] = { character: characterName };
+        // Add new mapping
+        currentMappings[steamName] = { character: characterName };
 
-        renderMappings();
-        refreshUnmappedDropdown();
+        // Save mappings - triggers a download
+        saveMappings(currentMappings);
 
-        $('#playerSelect').val('');
-        $('#characterName').val('');
-      });
+        $('#status').text(`Mapping saved for ${steamName}. Please upload the updated mappings.json to your server.`);
 
-      // Remove mapping
-      $('#mappingsContainer').on('click', '.removeMappingBtn', function() {
-        const steamName = $(this).data('steam');
-        if (confirm(`Remove mapping for ${steamName}?`)) {
-          delete mappings[steamName];
-          renderMappings();
-          refreshUnmappedDropdown();
-        }
-      });
+        // Reset form
+        $('#mappingForm')[0].reset();
 
-      // Update mapping on input change
-      $('#mappingsContainer').on('input', '.characterInput', function() {
-        const steamName = $(this).data('steam');
-        const val = $(this).val().trim();
-        if (steamName in mappings) {
-          mappings[steamName].character = val;
-        }
-      });
-
-      // Save mappings prompt
-      $('#saveMappingsBtn').click(() => {
-        const jsonStr = JSON.stringify(mappings, null, 2);
-        prompt('Copy your mappings JSON below:', jsonStr);
+        // Refresh dropdown and table
+        refreshDropdownAndTable();
       });
     });
   </script>
