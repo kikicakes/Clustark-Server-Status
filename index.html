@@ -27,8 +27,7 @@
   </div>
 
   <script>
-    const API_URL = 'https://api.trackyserver.com/widget/index.php?id=1001651';
-
+const API_URL = 'https://corsproxy.io/?https://api.trackyserver.com/widget/index.php?id=1001651';
     function refreshServerData() {
       $.getJSON(API_URL)
         .done(data => {
